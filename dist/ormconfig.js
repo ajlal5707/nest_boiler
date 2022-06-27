@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
+console.log(process.env.MYSQL_HOST);
 const config = {
     type: 'mysql',
     host: process.env.MYSQL_HOST,

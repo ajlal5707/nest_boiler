@@ -12,26 +12,71 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const users_repository_1 = require("./users.repository");
+const user_entity_1 = require("./entities/user.entity");
 let UsersService = class UsersService {
     constructor(userRepository) {
         this.userRepository = userRepository;
     }
     async create(createUserDto) {
         let user = await this.userRepository.findByEmail(createUserDto.email);
+        if (user)
+            return new common_1.BadRequestException('USER_WITH_EMAIL_ALREADY_EXIST');
+        const newUser = new user_entity_1.User();
+        newUser.user_name = createUserDto.user_name;
+        newUser.password = createUserDto.password;
+        newUser.email = createUserDto.email;
+        newUser.role = "user";
+        let createdUser = await this.userRepository.save(newUser);
+        return createdUser;
+    }
+    async findAll(getUsersDto) {
+        const take = getUsersDto.page;
+        const skip = getUsersDto.limit;
+        const search = getUsersDto.search;
+        let whereCondition = {};
+        if (search) {
+            whereCondition = { user_name: search };
+        }
+        const [list, count] = await this.userRepository.createQueryBuilder('users')
+            .select(['users.user_name', 'users.email', 'users.role'])
+            .where(whereCondition)
+            .skip((take - 1) * skip)
+            .take(skip)
+            .orderBy({ 'id': 'ASC' }).getManyAndCount();
+        return {
+            list,
+            count,
+        };
+    }
+    async findOne(id) {
+        const user = await this.userRepository.findOne({ where: { id: id } });
         console.log(user);
+        if (!user)
+            return new common_1.BadRequestException('User not found with given ID');
         return user;
     }
-    findAll() {
-        return `This action returns all users`;
+    async update(id, updateUserDto) {
+        let { user_name, email, password } = updateUserDto;
+        let updateAble = {};
+        if (user_name) {
+            updateAble = Object.assign(Object.assign({}, updateAble), { user_name: user_name });
+        }
+        if (email) {
+            updateAble = Object.assign(Object.assign({}, updateAble), { email: email });
+        }
+        if (password) {
+            updateAble = Object.assign(Object.assign({}, updateAble), { password: password });
+        }
+        const result = await this.userRepository.createQueryBuilder()
+            .update(updateAble)
+            .where({
+            id: id,
+        })
+            .execute();
+        return result;
     }
-    findOne(id) {
-        return `This action returns a #${id} user`;
-    }
-    update(id, updateUserDto) {
-        return `This action updates a #${id} user`;
-    }
-    remove(id) {
-        return `This action removes a #${id} user`;
+    async remove(id) {
+        return await this.userRepository.delete(id);
     }
 };
 UsersService = __decorate([
