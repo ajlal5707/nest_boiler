@@ -5,8 +5,6 @@
 import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOptions";
 import 'dotenv/config';
 
-console.log(process.env.MYSQL_HOST)
-
 const config: MysqlConnectionOptions = {
   type: 'mysql',
   host: process.env.MYSQL_HOST,
